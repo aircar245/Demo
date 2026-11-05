@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_PUBLIC_API_BASE = "https://example.com"
+  NEXT_PUBLIC_NSCC_ORIGIN = "https://example.com"

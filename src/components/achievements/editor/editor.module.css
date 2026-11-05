@@ -1,0 +1,157 @@
+.editor {
+  min-width: 0;
+  border: 1px solid var(--ow-border);
+  background: var(--ow-panel-bg-alt);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--ow-border);
+}
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ow-text);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9575cd;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.actions button {
+  padding: 7px 9px;
+  border: 1px solid var(--ow-border-dim);
+  border-radius: 4px;
+  color: var(--ow-text-mid);
+  background: var(--ow-panel);
+  font-size: 11px;
+  min-height: 34px;
+}
+.actions button:hover {
+  color: var(--ow-text);
+  border-color: var(--accent);
+}
+.actions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.actions button:disabled {
+  opacity: 0.4;
+}
+.hint {
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--ow-text-dim);
+}
+.canvas {
+  height: 560px;
+  width: 100%;
+  min-width: 0;
+}
+.canvas :global(.blocklySvg) {
+  border: 0;
+}
+.canvas :global(.blocklyToolbox) {
+  padding: 8px 0;
+}
+.canvas :global(.blocklyTreeLabel) {
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+}
+.canvas :global(.blocklyTreeRow) {
+  padding: 6px 10px;
+  height: auto;
+}
+.status {
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--ow-text-dim);
+  border-top: 1px solid var(--ow-border);
+}
+.status[data-error="true"] {
+  color: var(--danger);
+}
+.json {
+  padding: 12px;
+  min-width: 0;
+}
+.json label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.json textarea,
+.json select {
+  width: 100%;
+  background: var(--ow-panel);
+  color: var(--ow-text);
+  border: 1px solid var(--ow-border-dim);
+  padding: 10px;
+  margin-top: 8px;
+}
+.json textarea {
+  min-height: 380px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  resize: vertical;
+}
+.json summary {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 12px 0;
+}
+.json pre {
+  max-height: 200px;
+  overflow: auto;
+  font-size: 11px;
+}
+.full {
+  background: var(--ow-bg);
+  position: fixed;
+  inset: 12px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 0 20px var(--ow-bg);
+}
+.full .canvas {
+  flex: 1;
+  min-height: 0;
+}
+.full .json {
+  overflow: auto;
+  flex: 1;
+}
+@media (max-width: 640px) {
+  .canvas {
+    height: 480px;
+  }
+  .toolbar {
+    align-items: flex-start;
+  }
+  .actions button {
+    min-height: 40px;
+  }
+  .full {
+    inset: 0;
+  }
+  .canvas :global(.blocklyTreeLabel) {
+    font-size: 11px;
+  }
+}
