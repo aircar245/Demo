@@ -311,7 +311,7 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
 
   switch (agent.phase) {
     case 'travel': {
-      const duration = clamp(Math.hypot(start.x - agent.origin.x, start.y - agent.origin.y) * .58, 145, 340);
+      const duration = clamp(Math.hypot(start.x - agent.origin.x, start.y - agent.origin.y) * .24, 55, 145);
       const progress = smooth(clamp(time / duration));
       position = {
         x: mix(agent.origin.x, start.x, progress),
@@ -323,15 +323,15 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
     }
     case 'press':
       pressed = true;
-      if (time >= 62) {
+      if (time >= 22) {
         agent.origin = start;
         activePhase(agent, hasParts(job) && !isText(job.kind) ? 'parts' : 'draw', now);
       }
       break;
     case 'draw': {
-      const duration = job.kind === 'frame' ? clamp(270 + rect.width * .34, 330, 650)
-        : job.kind === 'rule' ? clamp(Math.max(rect.width, rect.height) * .52, 180, 490)
-        : isText(job.kind) ? 150 : 135;
+      const duration = job.kind === 'frame' ? clamp(100 + rect.width * .14, 130, 260)
+        : job.kind === 'rule' ? clamp(Math.max(rect.width, rect.height) * .21, 70, 195)
+        : isText(job.kind) ? 60 : 55;
       const linear = clamp(time / duration);
       const progress = smooth(linear);
       position = { x: mix(start.x, end.x, progress), y: mix(start.y, end.y, progress) };
@@ -371,7 +371,7 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
       const target = job.kind === 'field-text' ? drawFieldInk(ctx, job, rect, job.drawn)
         : { x:cell ? glyph.left + glyph.width/2 : glyph.right, y:glyph.top+glyph.height/2 };
       const distance = Math.hypot(target.x-agent.origin.x, target.y-agent.origin.y);
-      const step = clamp(distance * .68, cell ? 35 : job.kind === 'align' ? 51 : 23, 205);
+      const step = clamp(distance * .27, cell ? 14 : job.kind === 'align' ? 20 : 10, 82);
       const linear = clamp(time / step);
       const progress = smooth(linear);
       position = { x:mix(agent.origin.x,target.x,progress), y:mix(agent.origin.y,target.y,progress) };
@@ -392,14 +392,14 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
       break;
     }
     case 'align': {
-      const progress = clamp((time-140) / 540);
+      const progress = clamp((time-55) / 215);
       const actualX = rect.left - job.offset;
       const inset = Math.max(0, Math.min(12, innerWidth - rect.right + job.offset - 4));
       job.offset = progress < .25 ? inset * smooth(progress / .25) : inset * (1 - smooth((progress - .25) / .75));
       (job.element as HTMLElement).style.setProperty('--swarm-offset', job.offset + 'px');
       drawRuler(ctx, { x: actualX, y: rect.top }, agent.color);
       selection(ctx, { x: actualX + job.offset, y: rect.top }, { x: actualX + job.offset + rect.width, y: rect.bottom }, agent.color);
-      const arrival = smooth(clamp(time / 140));
+      const arrival = smooth(clamp(time / 55));
       position = { x:mix(agent.origin.x,actualX+job.offset+10,arrival), y:mix(agent.origin.y,rect.top+7,arrival) };
       tool = 'arrow';
       pressed = progress > .1 && progress < .9;
@@ -409,7 +409,7 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
     case 'release':
       position = { x: agent.x, y: agent.y };
       tool = isText(job.kind) ? 'caret' : 'arrow';
-      if (time >= 100) {
+      if (time >= 35) {
         if (job.state !== 'done') complete(job, highlight);
         agent.job = undefined;
       }
@@ -449,17 +449,13 @@ function needsRescan(records: MutationRecord[]): boolean {
 export function SwarmAssembly({ navigation, children }: { navigation: ReactNode; children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const controlsRef = useRef<HTMLDivElement>(null);
-  const replayRef = useRef<HTMLButtonElement>(null);
-  const skipRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
 
   useLayoutEffect(() => {
-    const root = rootRef.current, canvas = canvasRef.current, controls = controlsRef.current;
-    const replay = replayRef.current, skip = skipRef.current;
+    const root = rootRef.current, canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     root?.removeAttribute('data-swarm-boot');
-    if (!root || !canvas || !controls || !replay || !skip || !ctx) return;
+    if (!root || !canvas || !ctx) return;
 
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     const highlight = typeof Highlight !== 'undefined' && CSS.highlights ? new Highlight() : null;
@@ -478,8 +474,6 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       for (const agent of agents) agent.job = undefined;
       root!.removeAttribute('data-swarm-running');
       ctx!.clearRect(0, 0, width, height);
-      if (document.activeElement === skip) replay!.focus({ preventScroll: true });
-      skip!.hidden = true;
     }
 
     function fitCanvas() {
@@ -518,7 +512,6 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       byId = new Map(jobs.map(job => [job.id,job]));
       if (jobs.some(job => job.state !== 'done')) {
         root!.setAttribute('data-swarm-running', '');
-        skip!.hidden = false;
       }
     }
 
@@ -528,13 +521,13 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       if (dirty) scan();
       fitCanvas();
       ctx!.clearRect(0, 0, width, height);
-      const intro = now - startTime < 410 && scrollY < 8;
+      const intro = now - startTime < 150 && scrollY < 8;
       if (intro) {
-        const progress = smooth(clamp((now - startTime) / 400));
+        const progress = smooth(clamp((now - startTime) / 145));
         const center = { x: width / 2, y: height * .45 };
         badge(ctx!, 'CNSS / 2026', { x: center.x - 35, y: center.y - 8 }, '#a1adbf');
         for (const agent of agents) {
-          const angle = agent.angle + (now - startTime) * .002;
+          const angle = agent.angle + (now - startTime) * .005;
           agent.x = mix(agent.origin.x, center.x + Math.cos(angle) * 78, progress);
           agent.y = mix(agent.origin.y, center.y + Math.sin(angle) * 44, progress);
           drawPointer(ctx!, agent, 'arrow');
@@ -598,7 +591,6 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       frame = 0;
       for (const job of jobs) reset(job, highlight);
       jobs = [];
-      controls!.hidden = motion.matches;
       if (motion.matches) {finish(false);return;}
       skipped = false;
       fitCanvas();
@@ -623,23 +615,15 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       wake();
     }
 
-    function replayAnimation() {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      start();
-    }
-
     function respectMotionPreference() {
-      controls!.hidden = motion.matches;
       if (motion.matches) finish(false);
       else start();
     }
 
     function respectKeyboardFocus(event: KeyboardEvent) {
-      if (event.key === 'Tab' && root!.hasAttribute('data-swarm-running') &&
-          event.target instanceof Node && !controls!.contains(event.target)) finish(false);
+      if (event.key === 'Tab' && root!.hasAttribute('data-swarm-running')) finish(false);
     }
 
-    const skipAnimation = () => finish(false);
     const observer = new MutationObserver(records => {
       if (skipped || !needsRescan(records)) return;
       // Mutation observers run before the next paint, so newly inserted content
@@ -652,8 +636,6 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       subtree:true, childList:true, characterData:true, attributes:true, attributeOldValue:true,
       attributeFilter:['class','style','hidden','open','placeholder','aria-expanded'],
     });
-    replay.addEventListener('click', replayAnimation);
-    skip.addEventListener('click', skipAnimation);
     window.addEventListener('scroll', wake, { passive:true, capture:true });
     window.addEventListener('resize', onResize);
     document.addEventListener('keydown', respectKeyboardFocus);
@@ -664,8 +646,6 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       if (highlight) CSS.highlights.delete('swarm-pending');
       root.removeAttribute('data-swarm-running');
       for (const job of jobs) reset(job, highlight);
-      replay.removeEventListener('click', replayAnimation);
-      skip.removeEventListener('click', skipAnimation);
       window.removeEventListener('scroll', wake, true);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('keydown', respectKeyboardFocus);
@@ -678,10 +658,6 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       {/* Keep the custom highlight rule intact through the build CSS optimizer. */}
       <style>{'::highlight(swarm-pending){color:transparent;-webkit-text-fill-color:transparent;text-shadow:none;text-decoration-color:transparent}'}</style>
       {navigation}
-      <div ref={controlsRef} className={styles.controls} data-swarm-ignore role="group" aria-label="构造动画" hidden>
-        <button ref={replayRef} type="button">重新构造</button>
-        <button ref={skipRef} type="button">跳过动画</button>
-      </div>
       {children}
       <canvas ref={canvasRef} className={styles.canvas} data-swarm-ignore aria-hidden="true" />
     </div>
