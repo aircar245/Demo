@@ -55,7 +55,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 ow-dots pointer-events-none opacity-40" />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
+        initial={false}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
         className="relative z-10 w-full max-w-md border"
@@ -147,7 +147,7 @@ export default function LoginPage() {
             {/* 错误提示 */}
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -4 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 className="ow-mono text-[11px] px-3 py-2 border"
                 style={{ color: '#E12E38', borderColor: '#E12E38', background: 'rgba(225,46,56,0.06)' }}

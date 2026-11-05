@@ -1,0 +1,32 @@
+.contentSized,
+.fixedSize {
+  inset: 0;
+  overflow: hidden;
+}
+
+.contentSized { position: relative; }
+.fixedSize { position: absolute; }
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.frame {
+  outline: 1px solid var(--ow-border);
+  outline-offset: -1px;
+}
+
+.corner {
+  position: absolute;
+  z-index: 30;
+  width: 14px;
+  height: 14px;
+  border: 0 solid var(--ow-text);
+  pointer-events: none;
+}
+
+.topLeft { top: -1px; left: -1px; border-top-width: 1.5px; border-left-width: 1.5px; }
+.topRight { top: -1px; right: -1px; border-top-width: 1.5px; border-right-width: 1.5px; }
+.bottomLeft { bottom: -1px; left: -1px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.bottomRight { bottom: -1px; right: -1px; border-bottom-width: 1.5px; border-right-width: 1.5px; }

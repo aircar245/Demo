@@ -4,6 +4,7 @@ import "katex/dist/katex.min.css";
 import { QueryProvider } from "./providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { SwarmAssembly } from "@/components/landing/SwarmAssembly";
 
 // 注：暂用系统字体栈（globals.css 中定义），避免服务器无法访问 Google Fonts。
 // 阶段1 确定 Figma 指定字体后，再换成本地字体文件或可访问的字体源。
@@ -26,8 +27,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" style={{ backgroundColor: 'var(--ow-bg)', color: 'var(--ow-text)' }}>
         <QueryProvider>
           <ThemeProvider />
-          <Navbar />
-          <main className="flex-1">{children}</main>
+          <SwarmAssembly navigation={<Navbar />}>
+            <main className="flex-1">{children}</main>
+          </SwarmAssembly>
         </QueryProvider>
       </body>
     </html>

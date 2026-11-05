@@ -8,20 +8,44 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .assembly[data-swarm-running] [data-swarm-kind="frame"]:not([data-swarm-done]) {
+  .assembly[data-swarm-boot] {
+    visibility: hidden;
+    animation: show-without-script 1ms step-end 2s forwards;
+  }
+
+  .assembly[data-swarm-running] [data-swarm-kind="frame"]:not([data-swarm-done]),
+  .assembly[data-swarm-running] [data-swarm-auto="frame"],
+  .assembly[data-swarm-running] [data-swarm-auto="rule"] {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
+    outline-color: transparent !important;
   }
 
   .assembly[data-swarm-running] [data-swarm-kind="rule"]:not([data-swarm-done]),
   .assembly[data-swarm-running] [data-swarm-kind="content"]:not([data-swarm-done]),
-  .assembly[data-swarm-running] [data-swarm-kind="frame"]:not([data-swarm-done]) [data-swarm-terminal-live],
+  .assembly[data-swarm-running] [data-swarm-kind="detail"]:not([data-swarm-done]),
+  .assembly[data-swarm-running] [data-swarm-auto="detail"],
   .assembly[data-swarm-running] :is([data-swarm-kind="text"], [data-swarm-kind="align"]):not([data-swarm-done]) [data-swarm-glyph]:not([data-swarm-drawn]),
-  .assembly[data-swarm-running] [data-swarm-kind="blocks"]:not([data-swarm-done]) [data-swarm-cell]:not([data-swarm-drawn]),
-  .assembly[data-swarm-running] [data-swarm-metric]:has([data-swarm-kind="blocks"]:not([data-swarm-done])) [data-swarm-metric-value] {
-    visibility: hidden;
+  .assembly[data-swarm-running] [data-swarm-kind="blocks"]:not([data-swarm-done]) [data-swarm-cell]:not([data-swarm-drawn]) {
+    visibility: hidden !important;
   }
+
+  .assembly[data-swarm-running] [data-swarm-field-ink]::placeholder {
+    color: transparent !important;
+  }
+
+  .assembly[data-swarm-running] :is([style*="ow-blink"], :global(.animate-ow-blink)) {
+    animation: none !important;
+  }
+}
+
+@keyframes show-without-script {
+  to { visibility: visible; }
+}
+
+@media (scripting: none) {
+  .assembly[data-swarm-boot] { visibility: visible; animation: none; }
 }
 
 .canvas {
@@ -38,9 +62,9 @@
 }
 
 .controls {
-  position: fixed;
-  right: max(0.75rem, env(safe-area-inset-right));
-  top: calc(3.25rem + env(safe-area-inset-top));
+  position: relative;
+  align-self: flex-end;
+  margin: 0.25rem max(0.75rem, env(safe-area-inset-right)) 0 0;
   z-index: 71;
   display: flex;
   padding: 0.1875rem;
@@ -49,12 +73,6 @@
   border-radius: 0.375rem;
   background: var(--ow-panel);
   box-shadow: 0 0.25rem 1.5rem #0003;
-}
-
-@media (max-width: 639px) and (prefers-reduced-motion: no-preference) {
-  .assembly [data-swarm-id="page-frame"] {
-    margin-top: 3.25rem;
-  }
 }
 
 .controls[hidden],

@@ -8,6 +8,8 @@ import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import { compileChallengeContent, createChallengeDocument } from '@/lib/challenge-content';
+import { isPlaceholderApi } from '@/lib/api/client';
+import { rehypePlaceholderLinks } from '@/lib/placeholder-links';
 
 function InteractiveContent({ html }: { html: string }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -53,12 +55,14 @@ function InteractiveContent({ html }: { html: string }) {
 }
 
 export function ChallengeContent({ content }: { content: string }) {
-  const compiled = useMemo(() => compileChallengeContent(content), [content]);
+  const compiled = useMemo(() => compileChallengeContent(content, isPlaceholderApi), [content]);
   if (compiled.interactive) return <InteractiveContent html={compiled.html} />;
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex, rehypeRaw, rehypeHighlight]}
+      rehypePlugins={isPlaceholderApi
+        ? [rehypeKatex, rehypeRaw, rehypeHighlight, rehypePlaceholderLinks]
+        : [rehypeKatex, rehypeRaw, rehypeHighlight]}
     >
       {content}
     </ReactMarkdown>

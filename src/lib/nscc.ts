@@ -1,11 +1,15 @@
 import { requestNsccTicket } from '@/lib/api/auth';
+import { EXTERNAL_PLACEHOLDER_URL } from '@/lib/placeholder-links';
 
 export const NSCC_ORIGIN = process.env.NEXT_PUBLIC_NSCC_ORIGIN;
-export const isPlaceholderNscc = NSCC_ORIGIN?.replace(/\/+$/, '') === 'https://example.com';
+export const isPlaceholderNscc = NSCC_ORIGIN?.trim().replace(/\/+$/, '').toLowerCase() === EXTERNAL_PLACEHOLDER_URL;
 
 export function launchNscc(): Promise<void> {
   if (!NSCC_ORIGIN) return Promise.reject(new Error('NSCC 地址尚未配置'));
-  if (isPlaceholderNscc) return Promise.reject(new Error('演示环境尚未连接 NSCC'));
+  if (isPlaceholderNscc) {
+    window.open(EXTERNAL_PLACEHOLDER_URL, '_blank', 'noopener,noreferrer');
+    return Promise.resolve();
+  }
 
   const nsccWindow = window.open(
     `${NSCC_ORIGIN}/auth/login/external`,

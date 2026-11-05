@@ -143,7 +143,7 @@ function DefinitionItem({
   return (
     <motion.button
       type="button"
-      initial={{ opacity: 0, x: -8 }}
+      initial={false}
       animate={{ opacity: 1, x: 0 }}
       transition={{
         duration: 0.2,

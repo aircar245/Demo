@@ -33,7 +33,7 @@ export function SidebarDrawer({ open, onClose, children }: Props) {
             key="drawer-backdrop"
             className="fixed inset-0 z-40 lg:hidden"
             style={{ background: 'rgba(0,0,0,0.6)' }}
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
@@ -44,7 +44,7 @@ export function SidebarDrawer({ open, onClose, children }: Props) {
             key="drawer-panel"
             className="fixed top-12 left-0 bottom-0 z-50 w-[240px] flex flex-col lg:hidden overflow-y-auto"
             style={{ background: 'rgba(10,10,10,0.98)', borderRight: '1px solid #2A2A2A' }}
-            initial={{ x: -240 }}
+            initial={false}
             animate={{ x: 0 }}
             exit={{ x: -240 }}
             transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}

@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { SwarmAssembly } from '@/components/landing/SwarmAssembly';
 import { SwarmText } from '@/components/landing/SwarmText';
 import { TerminalPanel } from '@/components/landing/TerminalPanel';
 import { ProgressBar } from '@/components/landing/ProgressBar';
@@ -14,30 +13,12 @@ import { useAuthStore } from '@/store/authStore';
 /**
  * 入口/Landing 页
  *
- * 页面装配完成后启动原有进度条、终端与标题动画。
- *
  * 进度条逻辑：
  *   - 已登录：显示个人得分 / 个人解题数（TOTAL_SCORE / SOLVED_AGGREGATE）
  *   - 未登录：显示平台整体（TOTAL_SCORE_GLOBAL / SOLVED_AGGREGATE_GLOBAL）
  */
 export default function Home() {
   const { isAuthenticated } = useAuthStore();
-  const [panelDone, setPanelDone] = useState(false);
-  const [statsActive, setStatsActive] = useState(false);
-  const [glitchActive, setGlitchActive] = useState(false);
-  const glitchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const onPanelComplete = useCallback(() => {
-    setPanelDone(true);
-    setStatsActive(true);
-    clearTimeout(glitchTimerRef.current);
-    glitchTimerRef.current = setTimeout(() => setGlitchActive(true), 250);
-  }, []);
-  const onPanelReplay = useCallback(() => {
-    clearTimeout(glitchTimerRef.current);
-    setPanelDone(false);
-    setGlitchActive(false);
-  }, []);
-  useEffect(() => () => clearTimeout(glitchTimerRef.current), []);
 
   // ── 个人数据（需登录）──────────────────────────────────────────────────────
   const { data: allChallenges = [] } = useQuery({
@@ -98,7 +79,6 @@ export default function Home() {
       className="relative min-h-[calc(100dvh-3rem)] flex flex-col select-none"
       style={{ background: 'var(--ow-bg)', color: 'var(--ow-text)' }}
     >
-      <SwarmAssembly onReady={onPanelComplete} onReplay={onPanelReplay}>
       <div
         data-swarm-id="page-frame"
         data-swarm-kind="frame"
@@ -116,23 +96,18 @@ export default function Home() {
             <SwarmText id="kicker" after="page-frame">Cohesion Network Security Studio</SwarmText>
           </p>
 
-          {/* 巨型标题 + ow-glitch */}
+          {/* 标题与终端方块各自构造 */}
           <h1
             className="font-['Inter'] leading-none tracking-tighter"
             style={{ fontSize: 'clamp(28px, 7vw, 118px)', color: 'var(--ow-text)' }}
           >
-            <SwarmText id="title" after="kicker" align className={glitchActive ? 'animate-ow-glitch' : ''}>
+            <SwarmText id="title" after="kicker" align>
               CNSS-RECRUITING
             </SwarmText>
             <span
+              data-swarm-id="title-cursor" data-swarm-kind="detail" data-swarm-after="title"
               className="inline-block w-[0.55em] h-[0.85em] align-bottom ml-1"
-              style={{
-                background: 'var(--ow-text)',
-                animation: panelDone
-                  ? '1s step-end 0s infinite normal none running ow-blink'
-                  : 'none',
-                opacity: panelDone ? 1 : 0,
-              }}
+              style={{ background: 'var(--ow-text)' }}
             />
           </h1>
 
@@ -157,19 +132,13 @@ export default function Home() {
             label={stats.scoreLabel}
             value={`${stats.myTotalScore.toLocaleString()} / ${stats.totalMaxScore.toLocaleString()}`}
             percent={stats.scorePercent}
-            active={statsActive}
             assemblyId="score"
-            countTo={stats.myTotalScore}
-            countSuffix={` / ${stats.totalMaxScore.toLocaleString()}`}
           />
           <ProgressBar
             label={stats.solvedLabel}
             value={`${stats.solvedCount} / ${stats.totalCount}`}
             percent={stats.solvedPercent}
-            active={statsActive}
             assemblyId="solved"
-            countTo={stats.solvedCount}
-            countSuffix={` / ${stats.totalCount}`}
             dim
           />
         </div>
@@ -177,7 +146,7 @@ export default function Home() {
         {/* ── 底部双面板 ── */}
         <div className="mx-2 mb-2 md:mx-4 md:mb-4 flex flex-col md:flex-row gap-4 md:h-[235px]">
           {/* 左：终端输出（动态化） */}
-          <TerminalPanel active={panelDone} recentSolves={recentSolves} assemble />
+          <TerminalPanel recentSolves={recentSolves} />
 
           {/* 右：Command Input */}
           <Link
@@ -201,19 +170,14 @@ export default function Home() {
             >
               <SwarmText id="command-enter" after="command-label">{'> ENTER'}</SwarmText>
               <span
+                data-swarm-id="command-cursor" data-swarm-kind="detail" data-swarm-after="command-enter"
                 className="inline-block w-[12px] h-[20px] ml-1 align-bottom"
-                style={{
-                  background: 'var(--ow-panel)',
-                  animation: panelDone
-                    ? '1s step-end 0s infinite normal none running ow-blink'
-                    : 'none',
-                }}
+                style={{ background: 'var(--ow-text-muted)' }}
               />
             </span>
           </Link>
         </div>
       </div>
-      </SwarmAssembly>
     </div>
   );
 }

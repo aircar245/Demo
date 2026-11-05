@@ -75,7 +75,7 @@ export function Navbar() {
 
   return (
     <motion.header
-      initial={{ y: '-100%' }}
+      initial={false}
       animate={{ y: 0 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
       className="h-12 w-full shrink-0 border-b bg-[var(--ow-panel-bg-topbar)]
@@ -267,7 +267,7 @@ export function Navbar() {
                       border: '1px solid var(--nav-dropdown-border)',
                       minWidth: '10rem',
                     }}
-                    initial={{ opacity: 0, y: -4 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.12, ease: 'easeOut' }}
@@ -385,7 +385,7 @@ export function Navbar() {
               background: 'var(--nav-mobile-bg)',
               borderColor: 'var(--ow-border)',
             }}
-            initial={{ height: 0, opacity: 0 }}
+            initial={false}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}

@@ -230,7 +230,7 @@ function InvitationsPanel({ panelReady }: { panelReady: boolean }) {
           codes.map((c, i) => (
             <motion.div
               key={c.id}
-              initial={{ opacity: 0, x: -8 }}
+              initial={false}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2, delay: i * 0.04, ease: 'easeOut' }}
               className="grid items-center gap-x-3 px-5 py-2.5 border-b transition-colors"
@@ -275,7 +275,7 @@ function UserRow({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
+      initial={false}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2, delay: index * 0.03, ease: 'easeOut' }}
       className="grid items-center gap-x-3 px-5 py-2.5 border-b transition-colors"

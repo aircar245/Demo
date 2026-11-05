@@ -59,12 +59,11 @@ function rankColor(rank: number) {
 /* ─── Stacked Mini Bar ───────────────────────────────────── */
 
 function StackedBar({
-  scoreList, totalScore, maxScore, active,
+  scoreList, totalScore, maxScore,
 }: {
   scoreList: Array<{ category: string; score: number }>;
   totalScore: number;
   maxScore: number;
-  active: boolean;
 }) {
   if (maxScore === 0) return null;
   const widthPct = Math.max((totalScore / maxScore) * 100, 2);
@@ -72,20 +71,13 @@ function StackedBar({
 
   return (
     <div className="flex items-center min-w-0">
-      {/* active=false 时 width 保持 0，active=true 时才展开 */}
-      <motion.div
+      <div
         className="h-[5px] flex overflow-hidden"
-        initial={{ width: 0 }}
-        animate={{ width: active ? `${widthPct}%` : 0 }}
-        transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-        style={{ maxWidth: '100%', background: 'var(--ow-border)' }}
+        style={{ width: `${widthPct}%`, maxWidth: '100%', background: 'var(--ow-border)' }}
       >
-        {segments.map((s, idx) => (
-          <motion.div
+        {segments.map(s => (
+          <div
             key={s.category}
-            initial={{ scaleX: 0, transformOrigin: 'left' }}
-            animate={{ scaleX: active ? 1 : 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut', delay: active ? 0.1 + idx * 0.04 : 0 }}
             style={{
               width: `${(s.score / totalScore) * 100}%`,
               background: CAT_COLORS[s.category] ?? '#555',
@@ -93,7 +85,7 @@ function StackedBar({
             }}
           />
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -117,7 +109,7 @@ function Podium({ top3, active }: { top3: RankedEntry[]; active: boolean }) {
         return (
           <motion.div
             key={entry.username}
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 + idx * 0.07, duration: 0.25 }}
             className="flex flex-col items-center gap-1"
@@ -212,7 +204,7 @@ function RankRow({
   return (
     <div>
       <motion.div
-        initial={{ opacity: 0, x: -4 }}
+        initial={false}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: Math.min(index * 0.015, 0.35), duration: 0.15 }}
         className="grid gap-3 px-3 md:px-6 py-3 border-b items-center border-l-2 cursor-pointer select-none"
@@ -246,7 +238,7 @@ function RankRow({
         {/* Breakdown bar */}
         {showBar && (
           <div className="min-w-0">
-            <StackedBar scoreList={entry.scoreList} totalScore={entry.score} maxScore={maxScore} active={listActive} />
+            <StackedBar scoreList={entry.scoreList} totalScore={entry.score} maxScore={maxScore} />
           </div>
         )}
         {/* 分数 */}
@@ -263,7 +255,7 @@ function RankRow({
         {expanded && (detailCats.length > 0 || achievements.length > 0) && (
           <motion.div
             key="detail"
-            initial={{ height: 0, opacity: 0 }}
+            initial={false}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
@@ -286,7 +278,7 @@ function RankRow({
               {achievements.length > 0 && (
                 <motion.div
                   key="achievements-section"
-                  initial={{ height: 0, opacity: 0 }}
+                  initial={false}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: 'easeInOut' }}
@@ -566,7 +558,7 @@ export default function LeaderboardPage() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${group}:${category}`}
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: isFetching && !isFetchingNextPage ? 0.4 : 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}

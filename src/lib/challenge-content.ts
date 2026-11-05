@@ -7,6 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeStringify from 'rehype-stringify';
+import { rehypePlaceholderLinks } from '@/lib/placeholder-links';
 
 const processor = unified()
   .use(remarkParse)
@@ -17,6 +18,8 @@ const processor = unified()
   .use(rehypeKatex)
   .use(rehypeHighlight)
   .use(rehypeStringify);
+
+const placeholderProcessor = processor().use(rehypePlaceholderLinks);
 
 interface HtmlNode {
   type: string;
@@ -29,9 +32,10 @@ function containsScript(node: HtmlNode): boolean {
 }
 
 // 只解析语法树，不在主页面创建 DOM 或执行脚本。
-export function compileChallengeContent(markdown: string) {
-  const tree = processor.runSync(processor.parse(markdown));
-  return { html: processor.stringify(tree), interactive: containsScript(tree) };
+export function compileChallengeContent(markdown: string, usePlaceholderLinks = false) {
+  const renderer = usePlaceholderLinks ? placeholderProcessor : processor;
+  const tree = renderer.runSync(renderer.parse(markdown));
+  return { html: renderer.stringify(tree), interactive: containsScript(tree) };
 }
 
 // 此代码运行在沙箱内，必须保持为可直接序列化的普通 JavaScript。
