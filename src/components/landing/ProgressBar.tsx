@@ -33,14 +33,14 @@ export function ProgressBar({
           className="font-['Inter'] text-5xl leading-none"
           style={{ color: dim ? '#707070' : '#F5F5F5' }}
         >
-          <SwarmText id={`${assemblyId}-value`} after={`${assemblyId}-track`}>{value}</SwarmText>
+          <SwarmText id={`${assemblyId}-value`} after={`${assemblyId}-label`}>{value}</SwarmText>
         </span>
       </div>
       {/* 分块进度条 */}
       <div className="w-full h-[22px] flex gap-[2px]"
         data-swarm-id={`${assemblyId}-track`}
         data-swarm-kind="blocks"
-        data-swarm-after={`${assemblyId}-label`}
+        data-swarm-after={`${assemblyId}-value`}
       >
         {Array.from({ length: TOTAL_BLOCKS }, (_, i) => {
           return (

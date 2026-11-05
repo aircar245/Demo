@@ -261,13 +261,33 @@ function drawFieldInk(ctx: CanvasRenderingContext2D, job: Job, rect: DOMRect, in
   return { x:Math.min(rect.right-2, x+advance), y };
 }
 
-function svgStroke(ctx: CanvasRenderingContext2D, element: Element, amount: number, color: string): Point | undefined {
+function svgPen(element: Element): ((offset: number) => Point) | undefined {
   if (!(element instanceof SVGGeometryElement)) return;
   const matrix = element.getScreenCTM();
   if (!matrix) return;
   const length = element.getTotalLength();
   if (!length) return;
   const pointAt = (offset: number) => element.getPointAtLength(length * offset).matrixTransform(matrix);
+  const first = pointAt(0), last = pointAt(1);
+  const earlier = (a: Point, b: Point) => Math.abs(a.y - b.y) <= 1 ? a.x < b.x : a.y < b.y;
+  if (Math.hypot(first.x - last.x, first.y - last.y) > .5) {
+    return earlier(last, first) ? offset => pointAt(1 - offset) : pointAt;
+  }
+
+  // On a closed path the original start point is arbitrary. Start along its upper left.
+  const samples = Array.from({ length: 24 }, (_, index) => pointAt(index / 24));
+  const top = Math.min(...samples.map(point => point.y));
+  let start = samples.findIndex(point => point.y <= top + 1);
+  for (const [index, point] of samples.entries()) {
+    if (point.y <= top + 1 && point.x < samples[start].x) start = index;
+  }
+  const forward = samples[(start + 1) % samples.length];
+  const backward = samples[(start + samples.length - 1) % samples.length];
+  const direction = earlier(backward, forward) ? -1 : 1;
+  return offset => pointAt((start / samples.length + direction * offset + 1) % 1);
+}
+
+function svgStroke(ctx: CanvasRenderingContext2D, pointAt: (offset: number) => Point, amount: number, color: string): Point {
   const count = Math.max(1, Math.ceil(amount * 24));
   let previous = pointAt(0);
   for (let index = 1; index <= count; index++) {
@@ -285,6 +305,7 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
     return;
   }
   const rect = job.element.getBoundingClientRect();
+  const pen = job.kind === 'detail' ? svgPen(job.element) : undefined;
   let start = { x: rect.left, y: rect.top };
   let end = { x: rect.right, y: rect.bottom };
   if (job.kind === 'native-text') {
@@ -296,9 +317,8 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
     if (job.edge === 'right') start.x = rect.right;
     if (job.edge === 'left' || job.edge === 'right' || (!job.edge && rect.height > rect.width)) end.x = start.x;
     else end.y = start.y;
-  } else if (job.kind === 'detail' && job.element instanceof SVGGeometryElement) {
-    const matrix = job.element.getScreenCTM();
-    if (matrix && job.element.getTotalLength()) start = job.element.getPointAtLength(0).matrixTransform(matrix);
+  } else if (pen) {
+    start = pen(0);
   } else if (job.kind === 'frame' || job.kind === 'content') {
     // Trace only the portion of a tall frame in this viewport.
     start = { x:Math.max(0, start.x), y:Math.max(0, start.y) };
@@ -344,8 +364,7 @@ function perform(ctx: CanvasRenderingContext2D, agent: Agent, job: Job, now: num
       } else if (job.kind === 'rule') {
         trace(ctx, start, position, agent.color, 1.5);
       } else if (job.kind === 'detail') {
-        const tip = svgStroke(ctx, job.element, progress, agent.color);
-        if (tip) position = tip;
+        if (pen) position = svgStroke(ctx, pen, progress, agent.color);
         else selection(ctx, start, position, agent.color);
       } else {
         const height = isText(job.kind) ? Math.min(45, rect.height) : rect.height;
@@ -436,6 +455,30 @@ function visibleJob(job: Job): boolean {
   return true;
 }
 
+function inReadingOrder(jobs: Job[]): Job[] {
+  const rowTolerance = 10;
+  const positioned = jobs.map(job => {
+    const rect = isText(job.kind) || job.kind === 'native-text' || job.kind === 'blocks'
+      ? glyphRect(job, job.drawn)
+      : job.element.getBoundingClientRect();
+    return {
+      job,
+      x: Math.max(0, job.edge === 'right' ? rect.right : rect.left),
+      y: Math.max(0, job.edge === 'bottom' ? rect.bottom : rect.top),
+    };
+  }).sort((a, b) => a.y - b.y);
+
+  const ordered: Job[] = [];
+  for (let start = 0; start < positioned.length;) {
+    let end = start + 1;
+    while (end < positioned.length && positioned[end].y <= positioned[start].y + rowTolerance) end++;
+    const row = positioned.slice(start, end).sort((a, b) => a.x - b.x || a.y - b.y);
+    ordered.push(...row.map(({ job }) => job));
+    start = end;
+  }
+  return ordered;
+}
+
 function needsRescan(records: MutationRecord[]): boolean {
   return records.some(record => {
     const node = record.target instanceof Element ? record.target : record.target.parentElement;
@@ -465,6 +508,7 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
     let byId = new Map<string,Job>();
     let frame = 0, startTime = 0, width = 0, height = 0, density = 0;
     let skipped = false, dirty = false;
+    let painting: Job | undefined;
 
     function finish(allowNewJobs: boolean) {
       cancelAnimationFrame(frame);
@@ -472,6 +516,7 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       skipped = !allowNewJobs;
       if (skipped) for (const job of jobs) complete(job, highlight);
       for (const agent of agents) agent.job = undefined;
+      painting = undefined;
       root!.removeAttribute('data-swarm-running');
       ctx!.clearRect(0, 0, width, height);
     }
@@ -500,6 +545,7 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
           reset(old, highlight);
           previous.delete(job.key);
           for (const agent of agents) if (agent.job === old) agent.job = undefined;
+          if (painting === old) painting = undefined;
         }
         applyPending(job, highlight);
         return job;
@@ -507,6 +553,7 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       for (const job of previous.values()) {
         reset(job, highlight);
         for (const agent of agents) if (agent.job === job) agent.job = undefined;
+        if (painting === job) painting = undefined;
       }
       for (const key of ids.keys()) if (!key.isConnected) ids.delete(key);
       byId = new Map(jobs.map(job => [job.id,job]));
@@ -536,42 +583,57 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
         return;
       }
 
+      const dependenciesDone = (job: Job) => job.after.every(id => {
+        const parent = byId.get(id);
+        return !parent || parent.state === 'done';
+      });
       for (const agent of agents) {
         const job = agent.job;
-        if (job && job.state !== 'done' && !visibleJob(job)) {
+        if (job && job.state !== 'done' && (!dependenciesDone(job) || !visibleJob(job))) {
           job.state = 'waiting';
           agent.job = undefined;
         }
       }
-      const available = agents.some(agent => !agent.job)
-        ? jobs.filter(job => job.state === 'waiting'
-            && job.after.every(id => {
-              const parent = byId.get(id);
-              return !parent || parent.state === 'done';
-            })
-            && visibleJob(job))
-          .map(job => ({ job, rect:job.element.getBoundingClientRect() }))
+      const idle = agents.filter(agent => !agent.job);
+      const needsPainter = painting?.state !== 'active';
+      const ready = needsPainter || idle.length
+        ? inReadingOrder(jobs.filter(job => job.state !== 'done' && dependenciesDone(job) && visibleJob(job)))
         : [];
+      if (needsPainter) painting = ready[0];
+      if (painting?.state === 'waiting' && idle.length === 0) {
+        // A completed frame can unlock an earlier item than the queued cursors.
+        const lastQueued = ready.findLast(job => job.state === 'active');
+        const cursor = lastQueued && agents.find(agent => agent.job === lastQueued);
+        if (lastQueued && cursor) {
+          lastQueued.state = 'waiting';
+          cursor.job = undefined;
+          idle.push(cursor);
+        }
+      }
+      for (const job of ready) {
+        if (!idle.length) break;
+        if (job.state !== 'waiting') continue;
+        const { left, top } = job.element.getBoundingClientRect();
+        const distance = (agent: Agent) => Math.hypot(agent.x - left, agent.y - top);
+        idle.sort((a, b) => distance(a) - distance(b));
+        const agent = idle.shift()!;
+        job.state = 'active';
+        agent.job = job;
+        agent.origin = { x: agent.x, y: agent.y };
+        activePhase(agent, 'travel', now);
+      }
 
       let worked = false;
       for (const agent of agents) {
-        if (!agent.job && available.length) {
-          let best = 0, bestDistance = Infinity;
-          for (const [index, candidate] of available.entries()) {
-            const { left, top, right, bottom } = candidate.rect;
-            const distance = Math.hypot(agent.x-clamp(agent.x,left,right), agent.y-clamp(agent.y,top,bottom));
-            if (distance < bestDistance) {best = index;bestDistance = distance;}
-          }
-          const [{job}] = available.splice(best,1);
-          job.state = 'active';
-          agent.job = job;
-          agent.origin = { x: agent.x, y: agent.y };
-          activePhase(agent, 'travel', now);
-        }
         const job = agent.job;
-        if (job) {
-          worked = true;
+        if (!job) continue;
+        worked = true;
+        // Let the next cursors arrive early, but only the head of the queue can paint.
+        if (job === painting || job.state === 'done' || agent.phase === 'travel') {
           perform(ctx!, agent, job, now, highlight);
+        } else {
+          agent.since = now;
+          drawPointer(ctx!, agent, 'arrow');
         }
       }
 
@@ -591,6 +653,7 @@ export function SwarmAssembly({ navigation, children }: { navigation: ReactNode;
       frame = 0;
       for (const job of jobs) reset(job, highlight);
       jobs = [];
+      painting = undefined;
       if (motion.matches) {finish(false);return;}
       skipped = false;
       fitCanvas();
